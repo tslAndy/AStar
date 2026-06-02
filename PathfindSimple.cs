@@ -3,7 +3,7 @@ class PathfindSimple : Pathfinder
     public PathfindSimple(int width, int height)
         : base(width, height) { }
 
-    public override Path GetPath(Vec2Int start, Vec2Int end)
+    public override Path? GetPath(Vec2Int start, Vec2Int end)
     {
         Dictionary<Vec2Int, Vec2Int> closed = new Dictionary<Vec2Int, Vec2Int>();
         Dictionary<Vec2Int, Node> opened = new Dictionary<Vec2Int, Node>();
@@ -60,17 +60,8 @@ class PathfindSimple : Pathfinder
             }
         }
 
-        if (!closed.ContainsKey(end))
-            return new Path(null, opened.Keys.ToArray(), closed.Keys.ToArray());
-
-        List<Vec2Int> path = new List<Vec2Int>();
-        while (end != start)
-        {
-            path.Add(end);
-            end = closed[end];
-        }
-        path.Add(start);
-
-        return new Path(path.ToArray(), opened.Keys.ToArray(), closed.Keys.ToArray());
+        if (closed.ContainsKey(end))
+            return BuildPath(closed, start, end);
+        return null;
     }
 }

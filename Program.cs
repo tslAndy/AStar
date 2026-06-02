@@ -102,34 +102,25 @@ class Program
             //
             if (path != null)
             {
-                foreach (Vec2Int vec in path.opened)
-                    Raylib.DrawRectangle(vec.x * cSize, vec.y * cSize, cSize, cSize, Color.Red);
-
-                foreach (Vec2Int vec in path.closed)
-                    Raylib.DrawRectangle(vec.x * cSize, vec.y * cSize, cSize, cSize, Color.White);
-
-                if (path.points != null)
+                for (int i = 0; i < path.points.Length - 1; i++)
                 {
-                    for (int i = 0; i < path.points.Length - 1; i++)
-                    {
-                        Vec2Int pnt = path.points[i];
-                        Vec2Int pntB = path.points[i + 1];
-                        Raylib.DrawLine(
-                            pnt.x * cSize + cSize / 2,
-                            pnt.y * cSize + cSize / 2,
-                            pntB.x * cSize + cSize / 2,
-                            pntB.y * cSize + cSize / 2,
-                            Color.Red
-                        );
-                    }
-                    foreach (Vec2Int vec in path.points)
-                        Raylib.DrawCircle(
-                            vec.x * cSize + cSize / 2,
-                            vec.y * cSize + cSize / 2,
-                            cSize / 4,
-                            Color.Green
-                        );
+                    Vec2Int pnt = path.points[i];
+                    Vec2Int pntB = path.points[i + 1];
+                    Raylib.DrawLine(
+                        pnt.x * cSize + cSize / 2,
+                        pnt.y * cSize + cSize / 2,
+                        pntB.x * cSize + cSize / 2,
+                        pntB.y * cSize + cSize / 2,
+                        Color.Red
+                    );
                 }
+                foreach (Vec2Int vec in path.points)
+                    Raylib.DrawCircle(
+                        vec.x * cSize + cSize / 2,
+                        vec.y * cSize + cSize / 2,
+                        cSize / 4,
+                        Color.Green
+                    );
             }
             for (int y = 0; y < height; y++)
             {

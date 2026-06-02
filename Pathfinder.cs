@@ -13,7 +13,24 @@ abstract class Pathfinder
         this._field = new long[len / 64 + ((len % 64) > 0 ? 1 : 0)];
     }
 
-    public abstract Path GetPath(Vec2Int start, Vec2Int end);
+    public abstract Path? GetPath(Vec2Int start, Vec2Int end);
+
+    protected Path BuildPath(Dictionary<Vec2Int, Vec2Int> closed, Vec2Int start, Vec2Int end)
+    {
+        List<Vec2Int> path = new List<Vec2Int>();
+        while (end != start)
+        {
+            path.Add(end);
+            end = closed[end];
+        }
+        path.Add(start);
+
+        int length = 0;
+        for (int i = 0; i < path.Count - 1; i++)
+            length += GetCost(path[i], path[i + 1]);
+
+        return new Path(path.ToArray(), length);
+    }
 
     protected int GetCost(Vec2Int start, Vec2Int end)
     {
@@ -48,14 +65,12 @@ abstract class Pathfinder
 
 class Path
 {
-    public Vec2Int[] points,
-        opened,
-        closed;
+    public Vec2Int[] points;
+    public int length;
 
-    public Path(Vec2Int[] points, Vec2Int[] opened, Vec2Int[] closed)
+    public Path(Vec2Int[] points, int length)
     {
         this.points = points;
-        this.opened = opened;
-        this.closed = closed;
+        this.length = length;
     }
 }

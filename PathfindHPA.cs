@@ -10,8 +10,13 @@ class PathfindHPA : Pathfinder
 
     private void Bake() { }
 
-    // public override this[int index]
-    // {
-    //
-    // }
+    public override bool this[Vec2Int pos]
+    {
+        get => base[pos];
+        set
+        {
+            base[pos] = value;
+            Bake();
+        }
+    }
 }
