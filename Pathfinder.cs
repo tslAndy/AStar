@@ -13,7 +13,7 @@ abstract class Pathfinder
         this._field = new long[len / 64 + ((len % 64) > 0 ? 1 : 0)];
     }
 
-    public abstract Path? GetPath(Vec2Int start, Vec2Int end);
+    public abstract Path GetPath(Vec2Int start, Vec2Int end);
 
     protected Path BuildPath(Dictionary<Vec2Int, Vec2Int> closed, Vec2Int start, Vec2Int end)
     {
@@ -58,15 +58,16 @@ abstract class Pathfinder
             int div = ind >> 6;
             int rem = ind & 63;
             _field[div] &= ~(1L << rem);
-            _field[div] |= 1L << rem;
+            _field[div] |= value ? (1L << rem) : 0;
         }
     }
 }
 
-class Path
+struct Path
 {
     public Vec2Int[] points;
     public int length;
+    public bool reversed;
 
     public Path(Vec2Int[] points, int length)
     {

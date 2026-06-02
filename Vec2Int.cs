@@ -19,6 +19,9 @@ record struct Vec2Int(int x, int y)
     public static Vec2Int downLeft => new Vec2Int(-1, -1);
     public static Vec2Int downRight => new Vec2Int(1, -1);
 
+    // TODO: remove
+    public int mag => (int)MathF.Sqrt(x * x + y * y);
+
     public override string ToString() => $"Vec2Int {x} {y}";
 
     public static int Dot(Vec2Int left, Vec2Int right) => left.x * right.x + left.y * right.y;

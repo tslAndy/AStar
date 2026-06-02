@@ -11,7 +11,7 @@ class PathfindJpsCached : Pathfinder
         Bake();
     }
 
-    public override Path? GetPath(Vec2Int start, Vec2Int end)
+    public override Path GetPath(Vec2Int start, Vec2Int end)
     {
         Dictionary<Vec2Int, Vec2Int> closed = new Dictionary<Vec2Int, Vec2Int>();
         Dictionary<Vec2Int, Node> opened = new Dictionary<Vec2Int, Node>();
@@ -63,7 +63,7 @@ class PathfindJpsCached : Pathfinder
 
         if (closed.ContainsKey(end))
             return BuildPath(closed, start, end);
-        return null;
+        return default;
     }
 
     private bool TraceRuntime(Vec2Int pos, Vec2Int dir, Vec2Int end, out Vec2Int result)
