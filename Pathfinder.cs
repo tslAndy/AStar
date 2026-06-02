@@ -2,13 +2,15 @@ abstract class Pathfinder
 {
     public readonly int width,
         height;
-    private readonly bool[] _field;
+    private readonly long[] _field;
 
     protected Pathfinder(int width, int height)
     {
         this.width = width;
         this.height = height;
-        this._field = new bool[width * height];
+
+        int len = width * height;
+        this._field = new long[len / 64 + ((len % 64) > 0 ? 1 : 0)];
     }
 
     public abstract Path GetPath(Vec2Int start, Vec2Int end);
@@ -26,8 +28,21 @@ abstract class Pathfinder
 
     public virtual bool this[Vec2Int pos]
     {
-        get => _field[pos.y * width + pos.x];
-        set => _field[pos.y * width + pos.x] = value;
+        get
+        {
+            int ind = pos.y * width + pos.x;
+            int div = ind >> 6;
+            int rem = ind & 63;
+            return (_field[div] & (1L << rem)) != 0;
+        }
+        set
+        {
+            int ind = pos.y * width + pos.x;
+            int div = ind >> 6;
+            int rem = ind & 63;
+            _field[div] &= ~(1L << rem);
+            _field[div] |= 1L << rem;
+        }
     }
 }
 
