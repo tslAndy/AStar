@@ -127,9 +127,9 @@ class Heap<T>
 
         for (int i = 0; i < n; i++, end--)
         {
-            if (elem.Equals(_list[i]))
+            if (elem.Equals(_list[i].elem))
                 return i;
-            if (elem.Equals(_list[end]))
+            if (elem.Equals(_list[end].elem))
                 return end;
         }
         return -1;
