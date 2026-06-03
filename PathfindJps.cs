@@ -19,6 +19,7 @@ class PathfindJps : Pathfinder
             Node node = field[pos];
 
             closed.Add(pos, node.prev);
+            field.Remove(pos);
 
             if (pos == end)
                 break;

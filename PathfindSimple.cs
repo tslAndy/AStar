@@ -18,8 +18,8 @@ class PathfindSimple : Pathfinder
             Vec2Int pos = heap.Pop();
             Node node = field[pos];
 
-            // if necessary also remove from field
             closed.Add(pos, node.prev);
+            field.Remove(pos);
 
             if (pos == end)
                 break;
