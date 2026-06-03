@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 class PathfindJpsCached : Pathfinder
 {
     private Cell[] _cells;
@@ -14,25 +16,22 @@ class PathfindJpsCached : Pathfinder
     public override Path GetPath(Vec2Int start, Vec2Int end)
     {
         Dictionary<Vec2Int, Vec2Int> closed = new Dictionary<Vec2Int, Vec2Int>();
-        Dictionary<Vec2Int, Node> opened = new Dictionary<Vec2Int, Node>();
+        Dictionary<Vec2Int, Node> field = new Dictionary<Vec2Int, Node>();
+        Heap<Vec2Int> heap = new Heap<Vec2Int>();
 
-        opened.Add(start, new Node(0, GetCost(start, end), start));
+        Stopwatch sw = new();
+        sw.Start();
 
-        while (opened.Count != 0)
+        Node first = new Node(0, GetCost(start, end), start);
+        field.Add(start, first);
+        heap.Add(start, first.fCost);
+
+        while (heap.Count != 0)
         {
-            KeyValuePair<Vec2Int, Node> current = new KeyValuePair<Vec2Int, Node>(
-                default,
-                new Node(1_000_000, 1_000_000, default)
-            );
-            foreach (KeyValuePair<Vec2Int, Node> kvp in opened)
-                if (kvp.Value < current.Value)
-                    current = kvp;
-
-            Vec2Int pos = current.Key;
-            Node node = current.Value;
+            Vec2Int pos = heap.Pop();
+            Node node = field[pos];
 
             closed.Add(pos, node.prev);
-            opened.Remove(pos);
 
             if (pos == end)
                 break;
@@ -49,17 +48,24 @@ class PathfindJpsCached : Pathfinder
                     continue;
 
                 Node jumpNode = new Node(node.gCost + GetCost(pos, jump), GetCost(jump, end), pos);
-                if (opened.TryGetValue(jump, out Node existing))
+                if (field.TryGetValue(jump, out Node existing))
                 {
                     if (jumpNode < existing)
-                        opened[jump] = jumpNode;
+                    {
+                        heap.Change(jump, jumpNode.fCost, existing.fCost);
+                        field[jump] = jumpNode;
+                    }
                 }
                 else
                 {
-                    opened.Add(jump, jumpNode);
+                    field.Add(jump, jumpNode);
+                    heap.Add(jump, jumpNode.fCost);
                 }
             }
         }
+
+        sw.Stop();
+        Console.WriteLine(sw.Elapsed);
 
         if (closed.ContainsKey(end))
             return BuildPath(closed, start, end);

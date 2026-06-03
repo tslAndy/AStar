@@ -5,26 +5,21 @@ class PathfindSimple : Pathfinder
 
     public override Path GetPath(Vec2Int start, Vec2Int end)
     {
+        Dictionary<Vec2Int, Node> field = new Dictionary<Vec2Int, Node>();
         Dictionary<Vec2Int, Vec2Int> closed = new Dictionary<Vec2Int, Vec2Int>();
-        Dictionary<Vec2Int, Node> opened = new Dictionary<Vec2Int, Node>();
+        Heap<Vec2Int> heap = new Heap<Vec2Int>();
 
-        opened.Add(start, new Node(0, GetCost(start, end), start));
+        Node first = new Node(0, GetCost(start, end), start);
+        field.Add(start, first);
+        heap.Add(start, first.fCost);
 
-        while (opened.Count != 0)
+        while (heap.Count != 0)
         {
-            KeyValuePair<Vec2Int, Node> current = new KeyValuePair<Vec2Int, Node>(
-                default,
-                new Node(1_000_000, 1_000_000, default)
-            );
-            foreach (KeyValuePair<Vec2Int, Node> kvp in opened)
-                if (kvp.Value < current.Value)
-                    current = kvp;
+            Vec2Int pos = heap.Pop();
+            Node node = field[pos];
 
-            Vec2Int pos = current.Key;
-            Node node = current.Value;
-
+            // if necessary also remove from field
             closed.Add(pos, node.prev);
-            opened.Remove(pos);
 
             if (pos == end)
                 break;
@@ -37,24 +32,30 @@ class PathfindSimple : Pathfinder
                         continue;
 
                     Vec2Int nextPos = pos + new Vec2Int(dx, dy);
-                    if (!IsCorrect(nextPos) || closed.ContainsKey(nextPos) || this[nextPos])
+                    if ((!IsCorrect(nextPos)) || closed.ContainsKey(nextPos) || this[nextPos])
                         continue;
+                    field.Remove(pos);
 
                     int deltaCost = (Math.Abs(dx) + Math.Abs(dy)) == 1 ? 10 : 14;
 
-                    if (opened.TryGetValue(nextPos, out Node nextNode))
+                    if (field.TryGetValue(nextPos, out Node nextNode))
                     {
                         if (node.gCost + deltaCost < nextNode.gCost)
                         {
+                            int oldCost = nextNode.fCost;
+
                             nextNode.prev = pos;
                             nextNode.gCost = node.gCost + deltaCost;
-                            opened[nextPos] = nextNode;
+
+                            field[nextPos] = nextNode;
+                            heap.Change(nextPos, nextNode.fCost, oldCost);
                         }
                     }
                     else
                     {
                         nextNode = new Node(node.gCost + deltaCost, GetCost(nextPos, end), pos);
-                        opened.Add(nextPos, nextNode);
+                        field.Add(nextPos, nextNode);
+                        heap.Add(nextPos, nextNode.fCost);
                     }
                 }
             }

@@ -22,7 +22,7 @@ record struct Vec2Int(int x, int y)
     // TODO: remove
     public int mag => (int)MathF.Sqrt(x * x + y * y);
 
-    public override string ToString() => $"Vec2Int {x} {y}";
+    public override string ToString() => $"Vec2Int: ({x} {y})";
 
     public static int Dot(Vec2Int left, Vec2Int right) => left.x * right.x + left.y * right.y;
 

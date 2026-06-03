@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 abstract class Pathfinder
 {
     public readonly int width,

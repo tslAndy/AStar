@@ -39,9 +39,9 @@ class Program
         //
         //
 
-        int width = 64;
-        int height = 32;
-        int cSize = 20;
+        int width = 180;
+        int height = 100;
+        int cSize = 10;
 
         Pathfinder pathfind = new PathfindJpsCached(width, height);
 
@@ -51,8 +51,6 @@ class Program
         Path path = default;
 
         Raylib.InitWindow(width * cSize, height * cSize, "A*");
-
-        Stopwatch sw = new Stopwatch();
 
         while (!Raylib.WindowShouldClose())
         {
@@ -64,10 +62,7 @@ class Program
                 pathfind[posInt] = true;
                 if (start != null && end != null)
                 {
-                    sw.Restart();
                     path = pathfind.GetPath(start.Value, end.Value);
-                    sw.Stop();
-                    Console.WriteLine(sw.Elapsed);
                 }
             }
             else if (Raylib.IsMouseButtonDown(MouseButton.Right))
@@ -75,10 +70,7 @@ class Program
                 pathfind[posInt] = false;
                 if (start != null && end != null)
                 {
-                    sw.Restart();
                     path = pathfind.GetPath(start.Value, end.Value);
-                    sw.Stop();
-                    Console.WriteLine(sw.Elapsed);
                 }
             }
             else if (Raylib.IsMouseButtonPressed(MouseButton.Middle))
@@ -90,10 +82,7 @@ class Program
                 else if (end == null)
                 {
                     end = posInt;
-                    sw.Restart();
                     path = pathfind.GetPath(start.Value, end.Value);
-                    sw.Stop();
-                    Console.WriteLine(sw.Elapsed);
                 }
                 else
                 {
@@ -165,10 +154,10 @@ class Program
             // for (int x = 0; x < width; x += PathfindHPA.CHUNK_SIZE)
             //     Raylib.DrawLine(x * cSize, 0, x * cSize, height * cSize, Color.Green);
 
-            for (int x = 0; x < width; x++)
-                Raylib.DrawText(x.ToString(), x * cSize + 5, 0, 20, Color.White);
-            for (int y = 1; y < height; y++)
-                Raylib.DrawText(y.ToString(), 0, y * cSize + 5, 20, Color.White);
+            // for (int x = 0; x < width; x++)
+            //     Raylib.DrawText(x.ToString(), x * cSize + 5, 0, 20, Color.White);
+            // for (int y = 1; y < height; y++)
+            //     Raylib.DrawText(y.ToString(), 0, y * cSize + 5, 20, Color.White);
 
             Raylib.EndDrawing();
         }
