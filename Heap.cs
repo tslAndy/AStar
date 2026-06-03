@@ -2,7 +2,9 @@ class Heap<T>
     where T : IEquatable<T>
 {
     private readonly List<Node> _list;
+
     private const int DIMS = 4;
+    private const int DIMS_POW = 2;
 
     public Heap(int capacity = 16) => _list = new List<Node>(capacity);
 
@@ -78,7 +80,7 @@ class Heap<T>
         {
             Node child = _list[index];
 
-            int parentInd = (index - 1) / DIMS;
+            int parentInd = (index - 1) >> DIMS_POW;
             Node parent = _list[parentInd];
             if (parent.prior <= child.prior)
                 break;
@@ -98,7 +100,7 @@ class Heap<T>
             int childInd = index;
             int childPrior = parent.prior;
 
-            int firstChild = index * DIMS + 1;
+            int firstChild = (index << DIMS_POW) + 1;
             int lastChild = Math.Min(firstChild + DIMS, _list.Count);
             for (int i = firstChild; i < lastChild; i++)
             {
