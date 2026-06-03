@@ -42,13 +42,11 @@ class PathfindSimple : Pathfinder
                     {
                         if (node.gCost + deltaCost < nextNode.gCost)
                         {
-                            int oldCost = nextNode.fCost;
-
                             nextNode.prev = pos;
                             nextNode.gCost = node.gCost + deltaCost;
 
                             field[nextPos] = nextNode;
-                            heap.Change(nextPos, nextNode.fCost, oldCost);
+                            heap.Change(nextPos, nextNode.fCost);
                         }
                     }
                     else

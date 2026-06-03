@@ -10,9 +10,9 @@ class Heap<T>
 
     public void Clear() => _list.Clear();
 
-    public bool Contains(T elem) => IndexLinear(elem) >= 0;
+    public bool Contains(T elem) => GetIndex(elem) >= 0;
 
-    public int GetPriority(T elem) => _list[IndexLinear(elem)].prior;
+    public int GetPriority(T elem) => _list[GetIndex(elem)].prior;
 
     public T PopAdd(T elem, int prior)
     {
@@ -37,10 +37,9 @@ class Heap<T>
         return result;
     }
 
-    // slow change
     public void Change(T elem, int newPrior)
     {
-        int index = IndexLinear(elem);
+        int index = GetIndex(elem);
         if (index == -1)
             throw new ArgumentException($"Elem {elem} doesn't exist", nameof(elem));
 
@@ -50,35 +49,9 @@ class Heap<T>
         Update(index);
     }
 
-    // fast change
-    public void Change(T elem, int newPrior, int oldPrior)
-    {
-        IndexRecursive(elem, oldPrior, 0, out int index);
-        if (index == -1)
-            throw new ArgumentException($"Elem {elem} doesn't exist", nameof(elem));
-
-        Node node = _list[index];
-        node.prior = newPrior;
-        _list[index] = node;
-        Update(index);
-    }
-
-    // slow remove, use when element priority is unknown
     public void Remove(T elem)
     {
-        int index = IndexLinear(elem);
-        if (index == -1)
-            throw new ArgumentException($"Elem {elem} doesn't exist", nameof(elem));
-
-        _list[index] = _list[^1];
-        _list.RemoveAt(_list.Count - 1);
-        Update(index);
-    }
-
-    // faster remove, use if element priority is known
-    public void Remove(T elem, int prior)
-    {
-        IndexRecursive(elem, prior, 0, out int index);
+        int index = GetIndex(elem);
         if (index == -1)
             throw new ArgumentException($"Elem {elem} doesn't exist", nameof(elem));
 
@@ -130,33 +103,7 @@ class Heap<T>
         }
     }
 
-    private bool IndexRecursive(T elem, int prior, int start, out int index)
-    {
-        if (start >= _list.Count || _list[start].prior > prior)
-        {
-            index = -1;
-            return false;
-        }
-
-        if (_list[start].prior == prior && _list[start].elem.Equals(elem))
-        {
-            index = start;
-            return true;
-        }
-
-        int firstChild = start * DIMS + 1;
-        int lastChild = Math.Min(firstChild + DIMS, _list.Count);
-        for (int i = firstChild; i < lastChild; i++)
-        {
-            if (IndexRecursive(elem, prior, i, out index))
-                return true;
-        }
-
-        index = -1;
-        return false;
-    }
-
-    private int IndexLinear(T elem)
+    private int GetIndex(T elem)
     {
         for (int i = 0; i < _list.Count; i++)
             if (_list[i].elem.Equals(elem))

@@ -48,7 +48,7 @@ class PathfindJpsCached : Pathfinder
                 {
                     if (jumpNode < existing)
                     {
-                        heap.Change(jump, jumpNode.fCost, existing.fCost);
+                        heap.Change(jump, jumpNode.fCost);
                         field[jump] = jumpNode;
                     }
                 }

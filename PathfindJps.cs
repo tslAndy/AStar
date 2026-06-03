@@ -38,7 +38,7 @@ class PathfindJps : Pathfinder
                     if (jumpNode < existing)
                     {
                         field[jump] = jumpNode;
-                        heap.Change(jump, jumpNode.fCost, existing.fCost);
+                        heap.Change(jump, jumpNode.fCost);
                     }
                 }
                 else
