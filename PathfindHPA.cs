@@ -2,18 +2,32 @@ using System.Numerics;
 
 class PathfindHPA : Pathfinder
 {
-    private int chunkX,
+    private readonly List<Vertex>[] _chunks;
+    private readonly Dictionary<Vertex, VNode> _field;
+    private readonly HashSet<Vertex> _closed;
+    private readonly Heap<Vertex> _heap;
+
+    private readonly int chunkX,
         chunkY;
+
     public const int CHUNK_SIZE = 16;
 
     public PathfindHPA(int width, int height)
         : base(width, height)
     {
+        if (width % CHUNK_SIZE != 0 || height % CHUNK_SIZE != 0)
+            throw new Exception($"Map size should be multiple of {CHUNK_SIZE}");
+
         chunkX = width / CHUNK_SIZE;
         chunkY = height / CHUNK_SIZE;
 
-        if (width % CHUNK_SIZE != 0 || height % CHUNK_SIZE != 0)
-            throw new Exception($"Map size should be multiple of {CHUNK_SIZE}");
+        _chunks = new List<Vertex>[chunkX * chunkY];
+        for (int i = 0; i < _chunks.Length; i++)
+            _chunks[i] = new List<Vertex>();
+
+        _field = new Dictionary<Vertex, VNode>();
+        _closed = new HashSet<Vertex>();
+        _heap = new Heap<Vertex>();
     }
 
     public override Path GetPath(Vec2Int start, Vec2Int end)
@@ -21,12 +35,23 @@ class PathfindHPA : Pathfinder
         throw new NotImplementedException();
     }
 
-    public List<Vec2Int>[] GetBridges()
+    private Vertex GetVertex(Vec2Int pos)
     {
-        List<Vec2Int>[] chunks = new List<Vec2Int>[chunkX * chunkY];
-        for (int i = 0; i < chunks.Length; i++)
-            chunks[i] = new List<Vec2Int>();
+        int cx = pos.x / CHUNK_SIZE;
+        int cy = pos.y / CHUNK_SIZE;
 
+        List<Vertex> chunkVerts = _chunks[cy * chunkX + cx];
+        foreach (Vertex temp in chunkVerts)
+            if (temp.pos == pos)
+                return temp;
+
+        Vertex vertex = new Vertex(pos, new List<Edge>());
+        chunkVerts.Add(vertex);
+        return vertex;
+    }
+
+    public void SetupBridges()
+    {
         List<Vec2Int> temp = new List<Vec2Int>();
         for (int cy = 0; cy < chunkY; cy++)
         {
@@ -39,10 +64,7 @@ class PathfindHPA : Pathfinder
 
                 HandleBorder(border, pos, Vec2Int.up, temp);
                 for (int i = 0; i < temp.Count; i++)
-                {
-                    chunks[cy * chunkX + cx - 1].Add(temp[i]);
-                    chunks[cy * chunkX + cx].Add(temp[i] + Vec2Int.right);
-                }
+                    _chunks[cy * chunkX + cx].Add(GetVertex(temp[i]));
             }
         }
 
@@ -57,14 +79,9 @@ class PathfindHPA : Pathfinder
 
                 HandleBorder(border, pos, Vec2Int.right, temp);
                 for (int i = 0; i < temp.Count; i++)
-                {
-                    chunks[(cy - 1) * chunkX + cx].Add(temp[i]);
-                    chunks[cy * chunkX + cx].Add(temp[i] + Vec2Int.up);
-                }
+                    _chunks[cy * chunkX + cx].Add(GetVertex(temp[i]));
             }
         }
-
-        return chunks;
     }
 
     private void HandleBorder(long border, Vec2Int pos, Vec2Int dir, List<Vec2Int> temp)
@@ -102,29 +119,21 @@ class PathfindHPA : Pathfinder
         return result;
     } // Of the edge, and where I walk alone
 
-    public Vertex[] GetPath(Vertex start, Vertex end)
+    public Path GetPath(Vertex start, Vertex end)
     {
-        // Первый словарь это текущий узел, путь до него, и узел из которого пришли
-        Dictionary<Vertex, (Vertex, Path)> closed = new Dictionary<Vertex, (Vertex, Path)>();
-        Dictionary<Vertex, VNode> opened = new Dictionary<Vertex, VNode>();
+        _field.Clear();
+        _closed.Clear();
+        _heap.Clear();
 
-        opened.Add(start, default);
+        _field.Add(start, default);
+        _heap.Add(start, 0);
 
-        while (opened.Count != 0)
+        while (_heap.Count != 0)
         {
-            Vertex vert = null;
-            VNode node = new VNode(1_000_000, null, default);
-            foreach (KeyValuePair<Vertex, VNode> kvp in opened)
-            {
-                if (kvp.Value < node)
-                {
-                    vert = kvp.Key;
-                    node = kvp.Value;
-                }
-            }
+            Vertex vert = _heap.Pop();
+            VNode node = _field[vert];
 
-            closed.Add(vert, (node.prev, node.path));
-            opened.Remove(vert);
+            _closed.Add(vert);
 
             if (vert == end)
                 break;
@@ -132,40 +141,48 @@ class PathfindHPA : Pathfinder
             for (int i = 0; i < vert.edges.Count; i++)
             {
                 Edge edge = vert.edges[i];
-                if (closed.ContainsKey(edge.end))
+                if (_closed.Contains(edge.end))
                     continue;
 
                 VNode temp = new VNode(node.cost + edge.path.length, vert, edge.path);
-                if (opened.TryGetValue(edge.end, out VNode existing))
+                if (_field.TryGetValue(edge.end, out VNode existing))
                 {
                     if (temp.cost < existing.cost)
-                        opened[edge.end] = temp;
+                    {
+                        _field[edge.end] = temp;
+                        _heap.Change(edge.end, temp.cost);
+                    }
                 }
                 else
                 {
-                    opened.Add(edge.end, temp);
+                    _field.Add(edge.end, temp);
+                    _heap.Add(edge.end, temp.cost);
                 }
             }
         }
 
-        if (!closed.ContainsKey(end))
-            return null;
+        if (!_closed.Contains(end))
+            return default;
 
-        List<Vertex> verts = new List<Vertex>();
+        List<Vec2Int> points = new List<Vec2Int>();
         while (end != start)
         {
-            verts.Add(end);
-            // заносим все точки попавшиеся на пути
-            (Vertex vert, Path path) = closed[end];
-            end = vert;
+            VNode node = _field[end];
+            for (int i = 0; i < node.path.Count; i++)
+                points.Add(node.path[i]);
+            end = node.prev;
         }
-        verts.Add(start);
-        return verts.ToArray();
+
+        int length = 0;
+        for (int i = 0; i < points.Count - 1; i++)
+            length += GetCost(points[i], points[i + 1]);
+
+        return new Path(points.ToArray(), length);
     }
 
     public record Vertex(Vec2Int pos, List<Edge> edges);
 
-    public record struct Edge(Vertex end, Path path); // TODO: Сделать путь структурой, тогда его можно помечать как инвертный. Затем брать cost из path
+    public record struct Edge(Vertex end, Path path);
 
     record struct VNode(int cost, Vertex prev, Path path) // TODO: добавить gcost, fcost и вместо prev путь к вертексу
     {

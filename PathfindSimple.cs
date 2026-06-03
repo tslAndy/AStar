@@ -1,25 +1,33 @@
 class PathfindSimple : Pathfinder
 {
+    private readonly Dictionary<Vec2Int, Node> _field;
+    private readonly HashSet<Vec2Int> _closed;
+    private readonly Heap<Vec2Int> _heap;
+
     public PathfindSimple(int width, int height)
-        : base(width, height) { }
+        : base(width, height)
+    {
+        _field = new Dictionary<Vec2Int, Node>();
+        _closed = new HashSet<Vec2Int>();
+        _heap = new Heap<Vec2Int>();
+    }
 
     public override Path GetPath(Vec2Int start, Vec2Int end)
     {
-        Dictionary<Vec2Int, Node> field = new Dictionary<Vec2Int, Node>();
-        Dictionary<Vec2Int, Vec2Int> closed = new Dictionary<Vec2Int, Vec2Int>();
-        Heap<Vec2Int> heap = new Heap<Vec2Int>();
+        _field.Clear();
+        _closed.Clear();
+        _heap.Clear();
 
         Node first = new Node(0, GetCost(start, end), start);
-        field.Add(start, first);
-        heap.Add(start, first.fCost);
+        _field.Add(start, first);
+        _heap.Add(start, first.fCost);
 
-        while (heap.Count != 0)
+        while (_heap.Count != 0)
         {
-            Vec2Int pos = heap.Pop();
-            Node node = field[pos];
+            Vec2Int pos = _heap.Pop();
+            Node node = _field[pos];
 
-            closed.Add(pos, node.prev);
-            field.Remove(pos);
+            _closed.Add(pos);
 
             if (pos == end)
                 break;
@@ -32,35 +40,34 @@ class PathfindSimple : Pathfinder
                         continue;
 
                     Vec2Int nextPos = pos + new Vec2Int(dx, dy);
-                    if ((!IsCorrect(nextPos)) || closed.ContainsKey(nextPos) || this[nextPos])
+                    if ((!IsCorrect(nextPos)) || _closed.Contains(nextPos) || this[nextPos])
                         continue;
-                    field.Remove(pos);
 
                     int deltaCost = (Math.Abs(dx) + Math.Abs(dy)) == 1 ? 10 : 14;
 
-                    if (field.TryGetValue(nextPos, out Node nextNode))
+                    if (_field.TryGetValue(nextPos, out Node nextNode))
                     {
                         if (node.gCost + deltaCost < nextNode.gCost)
                         {
                             nextNode.prev = pos;
                             nextNode.gCost = node.gCost + deltaCost;
 
-                            field[nextPos] = nextNode;
-                            heap.Change(nextPos, nextNode.fCost);
+                            _field[nextPos] = nextNode;
+                            _heap.Change(nextPos, nextNode.fCost);
                         }
                     }
                     else
                     {
                         nextNode = new Node(node.gCost + deltaCost, GetCost(nextPos, end), pos);
-                        field.Add(nextPos, nextNode);
-                        heap.Add(nextPos, nextNode.fCost);
+                        _field.Add(nextPos, nextNode);
+                        _heap.Add(nextPos, nextNode.fCost);
                     }
                 }
             }
         }
 
-        if (closed.ContainsKey(end))
-            return BuildPath(closed, start, end);
+        if (_closed.Contains(end))
+            return BuildPath(_field, start, end);
         return default;
     }
 }

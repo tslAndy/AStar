@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 abstract class Pathfinder
 {
     public readonly int width,
@@ -17,13 +15,13 @@ abstract class Pathfinder
 
     public abstract Path GetPath(Vec2Int start, Vec2Int end);
 
-    protected Path BuildPath(Dictionary<Vec2Int, Vec2Int> closed, Vec2Int start, Vec2Int end)
+    protected Path BuildPath(Dictionary<Vec2Int, Node> field, Vec2Int start, Vec2Int end)
     {
         List<Vec2Int> path = new List<Vec2Int>();
         while (end != start)
         {
             path.Add(end);
-            end = closed[end];
+            end = field[end].prev;
         }
         path.Add(start);
 

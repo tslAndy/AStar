@@ -1,33 +1,37 @@
 class PathfindJpsCached : Pathfinder
 {
-    private Cell[] _cells;
+    private readonly Cell[] _cells;
+    private readonly Dictionary<Vec2Int, Node> _field;
+    private readonly HashSet<Vec2Int> _closed;
+    private readonly Heap<Vec2Int> _heap;
 
     public PathfindJpsCached(int width, int height)
         : base(width, height)
     {
         _cells = new Cell[width * height];
+        _field = new Dictionary<Vec2Int, Node>();
+        _closed = new HashSet<Vec2Int>();
+        _heap = new Heap<Vec2Int>();
 
-        // TODO: remove
         Bake();
     }
 
     public override Path GetPath(Vec2Int start, Vec2Int end)
     {
-        Dictionary<Vec2Int, Vec2Int> closed = new Dictionary<Vec2Int, Vec2Int>();
-        Dictionary<Vec2Int, Node> field = new Dictionary<Vec2Int, Node>();
-        Heap<Vec2Int> heap = new Heap<Vec2Int>();
+        _field.Clear();
+        _closed.Clear();
+        _heap.Clear();
 
         Node first = new Node(0, GetCost(start, end), start);
-        field.Add(start, first);
-        heap.Add(start, first.fCost);
+        _field.Add(start, first);
+        _heap.Add(start, first.fCost);
 
-        while (heap.Count != 0)
+        while (_heap.Count != 0)
         {
-            Vec2Int pos = heap.Pop();
-            Node node = field[pos];
+            Vec2Int pos = _heap.Pop();
+            Node node = _field[pos];
 
-            closed.Add(pos, node.prev);
-            field.Remove(pos);
+            _closed.Add(pos);
 
             if (pos == end)
                 break;
@@ -38,30 +42,29 @@ class PathfindJpsCached : Pathfinder
             {
                 Vec2Int prunedDir = pruned[i];
                 if (
-                    (!TraceRuntime(pos, prunedDir, end, out Vec2Int jump))
-                    || closed.ContainsKey(jump)
+                    (!TraceRuntime(pos, prunedDir, end, out Vec2Int jump)) || _closed.Contains(jump)
                 )
                     continue;
 
                 Node jumpNode = new Node(node.gCost + GetCost(pos, jump), GetCost(jump, end), pos);
-                if (field.TryGetValue(jump, out Node existing))
+                if (_field.TryGetValue(jump, out Node existing))
                 {
-                    if (jumpNode < existing)
+                    if (jumpNode.fCost < existing.fCost)
                     {
-                        heap.Change(jump, jumpNode.fCost);
-                        field[jump] = jumpNode;
+                        _heap.Change(jump, jumpNode.fCost);
+                        _field[jump] = jumpNode;
                     }
                 }
                 else
                 {
-                    field.Add(jump, jumpNode);
-                    heap.Add(jump, jumpNode.fCost);
+                    _field.Add(jump, jumpNode);
+                    _heap.Add(jump, jumpNode.fCost);
                 }
             }
         }
 
-        if (closed.ContainsKey(end))
-            return BuildPath(closed, start, end);
+        if (_closed.Contains(end))
+            return BuildPath(_field, start, end);
         return default;
     }
 
