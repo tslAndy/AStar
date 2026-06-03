@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 class PathfindJps : Pathfinder
 {
     public PathfindJps(int width, int height)
@@ -10,9 +8,6 @@ class PathfindJps : Pathfinder
         Dictionary<Vec2Int, Node> field = new Dictionary<Vec2Int, Node>();
         Dictionary<Vec2Int, Vec2Int> closed = new Dictionary<Vec2Int, Vec2Int>();
         Heap<Vec2Int> heap = new Heap<Vec2Int>();
-
-        Stopwatch sw = new();
-        sw.Start();
 
         Node first = new Node(0, GetCost(start, end), start);
         field.Add(start, first);
@@ -52,9 +47,6 @@ class PathfindJps : Pathfinder
                 }
             }
         }
-
-        sw.Stop();
-        Console.WriteLine(sw.Elapsed);
 
         if (closed.ContainsKey(end))
             return BuildPath(closed, start, end);

@@ -10,6 +10,18 @@ class Heap<T>
 
     public void Clear() => _list.Clear();
 
+    public bool Contains(T elem) => IndexLinear(elem) >= 0;
+
+    public int GetPriority(T elem) => _list[IndexLinear(elem)].prior;
+
+    public T PopAdd(T elem, int prior)
+    {
+        T result = _list[0].elem;
+        _list[0] = new Node(elem, prior);
+        Update(0);
+        return result;
+    }
+
     public void Add(T elem, int prior)
     {
         _list.Add(new Node(elem, prior));

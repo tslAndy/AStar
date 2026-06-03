@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 class PathfindJpsCached : Pathfinder
 {
     private Cell[] _cells;
@@ -18,9 +16,6 @@ class PathfindJpsCached : Pathfinder
         Dictionary<Vec2Int, Vec2Int> closed = new Dictionary<Vec2Int, Vec2Int>();
         Dictionary<Vec2Int, Node> field = new Dictionary<Vec2Int, Node>();
         Heap<Vec2Int> heap = new Heap<Vec2Int>();
-
-        Stopwatch sw = new();
-        sw.Start();
 
         Node first = new Node(0, GetCost(start, end), start);
         field.Add(start, first);
@@ -63,9 +58,6 @@ class PathfindJpsCached : Pathfinder
                 }
             }
         }
-
-        sw.Stop();
-        Console.WriteLine(sw.Elapsed);
 
         if (closed.ContainsKey(end))
             return BuildPath(closed, start, end);
