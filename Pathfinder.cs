@@ -65,13 +65,18 @@ abstract class Pathfinder
 
 struct Path
 {
-    public Vec2Int[] points;
     public int length;
     public bool reversed;
 
+    private Vec2Int[] _points;
+
     public Path(Vec2Int[] points, int length)
     {
-        this.points = points;
+        this._points = points;
         this.length = length;
     }
+
+    public int Count => _points?.Length ?? 0;
+
+    public Vec2Int this[int index] => _points[reversed ? (_points.Length - 1 - index) : index];
 }

@@ -104,9 +104,8 @@ class PathfindHPA : Pathfinder
 
     public Vertex[] GetPath(Vertex start, Vertex end)
     {
-        // здесь вместо предыдущего вертексу путь
-        // хотя вертекс тоже нужен
-        Dictionary<Vertex, Vertex> closed = new Dictionary<Vertex, Vertex>();
+        // Первый словарь это текущий узел, путь до него, и узел из которого пришли
+        Dictionary<Vertex, (Vertex, Path)> closed = new Dictionary<Vertex, (Vertex, Path)>();
         Dictionary<Vertex, VNode> opened = new Dictionary<Vertex, VNode>();
 
         opened.Add(start, default);
@@ -114,7 +113,7 @@ class PathfindHPA : Pathfinder
         while (opened.Count != 0)
         {
             Vertex vert = null;
-            VNode node = new VNode(1_000_000, null);
+            VNode node = new VNode(1_000_000, null, default);
             foreach (KeyValuePair<Vertex, VNode> kvp in opened)
             {
                 if (kvp.Value < node)
@@ -124,7 +123,7 @@ class PathfindHPA : Pathfinder
                 }
             }
 
-            closed.Add(vert, node.prev);
+            closed.Add(vert, (node.prev, node.path));
             opened.Remove(vert);
 
             if (vert == end)
@@ -133,18 +132,18 @@ class PathfindHPA : Pathfinder
             for (int i = 0; i < vert.edges.Count; i++)
             {
                 Edge edge = vert.edges[i];
-                if (closed.ContainsKey(edge.vert))
+                if (closed.ContainsKey(edge.end))
                     continue;
 
-                VNode temp = new VNode(node.cost + edge.cost, vert);
-                if (opened.TryGetValue(edge.vert, out VNode existing))
+                VNode temp = new VNode(node.cost + edge.path.length, vert, edge.path);
+                if (opened.TryGetValue(edge.end, out VNode existing))
                 {
                     if (temp.cost < existing.cost)
-                        opened[edge.vert] = temp;
+                        opened[edge.end] = temp;
                 }
                 else
                 {
-                    opened.Add(edge.vert, temp);
+                    opened.Add(edge.end, temp);
                 }
             }
         }
@@ -156,7 +155,9 @@ class PathfindHPA : Pathfinder
         while (end != start)
         {
             verts.Add(end);
-            end = closed[end];
+            // заносим все точки попавшиеся на пути
+            (Vertex vert, Path path) = closed[end];
+            end = vert;
         }
         verts.Add(start);
         return verts.ToArray();
@@ -164,9 +165,9 @@ class PathfindHPA : Pathfinder
 
     public record Vertex(Vec2Int pos, List<Edge> edges);
 
-    public record struct Edge(int cost, Vertex vert); // TODO: Сделать путь структурой, тогда его можно помечать как инвертный. Затем брать cost из path
+    public record struct Edge(Vertex end, Path path); // TODO: Сделать путь структурой, тогда его можно помечать как инвертный. Затем брать cost из path
 
-    record struct VNode(int cost, Vertex prev) // TODO: добавить gcost, fcost и вместо prev путь к вертексу
+    record struct VNode(int cost, Vertex prev, Path path) // TODO: добавить gcost, fcost и вместо prev путь к вертексу
     {
         public static bool operator <(VNode left, VNode right) => left.cost < right.cost;
 
