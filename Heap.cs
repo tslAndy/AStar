@@ -18,14 +18,14 @@ class Heap<T>
     {
         T result = _list[0].elem;
         _list[0] = new Node(elem, prior);
-        Update(0);
+        SweepDown(0);
         return result;
     }
 
     public void Add(T elem, int prior)
     {
         _list.Add(new Node(elem, prior));
-        Update(_list.Count - 1);
+        SweepUp(_list.Count - 1);
     }
 
     public T Pop()
@@ -33,7 +33,7 @@ class Heap<T>
         T result = _list[0].elem;
         _list[0] = _list[^1];
         _list.RemoveAt(_list.Count - 1);
-        Update(0);
+        SweepDown(0);
         return result;
     }
 
@@ -43,10 +43,15 @@ class Heap<T>
         if (index == -1)
             throw new ArgumentException($"Elem {elem} doesn't exist", nameof(elem));
 
-        Node node = _list[index];
-        node.prior = newPrior;
-        _list[index] = node;
-        Update(index);
+        Node cur = _list[index];
+        Node next = cur with { prior = newPrior };
+
+        _list[index] = next;
+
+        if (next.prior < cur.prior)
+            SweepUp(index);
+        else if (next.prior > cur.prior)
+            SweepDown(index);
     }
 
     public void Remove(T elem)
@@ -55,12 +60,19 @@ class Heap<T>
         if (index == -1)
             throw new ArgumentException($"Elem {elem} doesn't exist", nameof(elem));
 
-        _list[index] = _list[^1];
+        Node cur = _list[index];
+        Node next = _list[^1];
+
         _list.RemoveAt(_list.Count - 1);
-        Update(index);
+        _list[index] = next;
+
+        if (next.prior < cur.prior)
+            SweepUp(index);
+        else if (next.prior > cur.prior)
+            SweepDown(index);
     }
 
-    private void Update(int index)
+    private void SweepUp(int index)
     {
         while (index > 0)
         {
@@ -75,7 +87,10 @@ class Heap<T>
             _list[parentInd] = child;
             index = parentInd;
         }
+    }
 
+    private void SweepDown(int index)
+    {
         while (index < _list.Count)
         {
             Node parent = _list[index];
