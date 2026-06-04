@@ -31,6 +31,13 @@ class PathfindHPA : Pathfinder
 
     public override void Update()
     {
+        for (int i = 0; i < _gates.Length; i++)
+            _gates[i].Clear();
+
+        // thought also about saving vertices to object pool and reuse them again
+        // but too lazy to implement it
+        // so each time new are created
+
         FindBridges();
         ConnectBridges();
     }
