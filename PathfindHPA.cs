@@ -118,6 +118,8 @@ class PathfindHPA : Pathfinder
                 points.Add(node.path[i]);
             end = node.prev;
         }
+
+        Smooth(points);
         points.Reverse();
 
         int length = 0;
@@ -125,6 +127,72 @@ class PathfindHPA : Pathfinder
             length += GetCost(points[i], points[i + 1]);
 
         return new Path(points.ToArray(), length);
+    }
+
+    // check if it's possible to remove two points
+    // or use only one instead
+    private void Smooth(List<Vec2Int> points)
+    {
+        int i = 0;
+        while (i < points.Count - 3)
+        {
+            if (!CheckPath(points[i], points[i + 3], out Vec2Int? newPoint))
+            {
+                i++;
+                continue;
+            }
+
+            points.RemoveAt(i + 2);
+            if (newPoint != null)
+                points[i + 1] = newPoint.Value;
+            else
+                points.RemoveAt(i + 1);
+        }
+    }
+
+    private bool CheckPath(Vec2Int start, Vec2Int end, out Vec2Int? newPoint)
+    {
+        Vec2Int dir = (end - start).Clamp(-1, 1);
+        Vec2Int delta = (end - start).Abs();
+
+        if (delta.x == 0 || delta.y == 0 || delta.x == delta.y)
+        {
+            newPoint = null;
+            return CheckDir(start, end, dir);
+        }
+
+        Vec2Int axDir = delta.x > delta.y ? dir.OnlyX : dir.OnlyY;
+
+        int digSteps = Math.Min(delta.x, delta.y);
+        int axSteps = Math.Max(delta.x, delta.y) - digSteps;
+
+        Vec2Int newPointA = start + axSteps * axDir;
+        if (CheckDir(start, newPointA, axDir) && CheckDir(newPointA, end, dir))
+        {
+            newPoint = newPointA;
+            return true;
+        }
+
+        Vec2Int newPointB = start + digSteps * dir;
+        if (CheckDir(start, newPointB, dir) && CheckDir(newPointB, end, axDir))
+        {
+            newPoint = newPointB;
+            return true;
+        }
+
+        newPoint = null;
+        return false;
+    }
+
+    private bool CheckDir(Vec2Int start, Vec2Int end, Vec2Int dir)
+    {
+        while (start != end)
+        {
+            if (this[start])
+                return false;
+            start += dir;
+        }
+        return true;
     }
 
     private Vertex AddPointToChunk(Vec2Int point)
@@ -278,7 +346,13 @@ class PathfindHPA : Pathfinder
 
             int n = BitOperations.TrailingZeroCount(border);
             border = ((1L << 63) >> (n - 1)) | (border >> n);
-            temp.Add(pos + dir * (offset + (n >> 1)));
+
+            if (n < 3)
+                temp.Add(pos + dir * (offset)); // + (n >> 1)
+            else
+                for (int i = 1; i < n; i += 3)
+                    temp.Add(pos + dir * (offset + i));
+
             offset += n;
         }
     }

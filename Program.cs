@@ -1,21 +1,14 @@
-﻿using System.Diagnostics;
-using System.Numerics;
+﻿using System.Numerics;
 using Raylib_cs;
 
 class Program
 {
     public static void Main()
     {
-        // WARNING: при изменении в чанке знаем какие ребра у него есть
-        // удаляем все его ребра и пути
-        // а так же удаляем соответсвтующие ребра из соединенных чанков
-        // затем обновляем границы с 4х сторон
-
-        int width = 184;
+        int width = 128;
         int height = 96;
         int cSize = 10;
 
-        // PathfindHPA pathfind = new PathfindHPA(width, height);
         Pathfinder pathfind = new PathfindHPA(width, height);
 
         Vec2Int? start = null,
@@ -112,17 +105,16 @@ class Program
                     Color.Red
                 );
             }
+
             for (int i = 0; i < path.Count; i++)
             {
-                Vec2Int tpos = path[i] * cSize + new Vec2Int(cSize) / 2;
-                Raylib.DrawText(i.ToString(), tpos.x, tpos.y, 18, Color.White);
-
-                // Raylib.DrawCircle(
-                //     path[i].x * cSize + cSize / 2,
-                //     path[i].y * cSize + cSize / 2,
-                //     cSize / 4,
-                //     Color.Green
-                // );
+                Vec2Int pnt = path[i];
+                Raylib.DrawCircle(
+                    pnt.x * cSize + cSize / 2,
+                    pnt.y * cSize + cSize / 2,
+                    2,
+                    Color.Blue
+                );
             }
 
             for (int y = 0; y < height; y++)
@@ -134,11 +126,6 @@ class Program
                 Raylib.DrawLine(0, y * cSize, width * cSize, y * cSize, Color.Green);
             for (int x = 0; x < width; x += PathfindHPA.CHUNK_SIZE)
                 Raylib.DrawLine(x * cSize, 0, x * cSize, height * cSize, Color.Green);
-
-            // for (int x = 0; x < width; x++)
-            //     Raylib.DrawText(x.ToString(), x * cSize + 5, 0, 20, Color.White);
-            // for (int y = 1; y < height; y++)
-            //     Raylib.DrawText(y.ToString(), 0, y * cSize + 5, 20, Color.White);
 
             Raylib.EndDrawing();
         }
