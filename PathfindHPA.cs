@@ -232,53 +232,97 @@ class PathfindHPA : Pathfinder
         GetGates(chunkPos).Remove(vertex);
     }
 
-    private Vertex GetVertex(Vec2Int pos)
-    {
-        Vec2Int chunkPos = pos / CHUNK_SIZE;
-        List<Vertex> verts = GetGates(chunkPos);
-        if (verts.TryGet(pos, (vert, pos) => vert.pos == pos, out Vertex vertex))
-            return vertex;
-
-        vertex = new Vertex(pos, new List<Edge>());
-        verts.Add(vertex);
-        return vertex;
-    }
-
     private void FindBridges()
     {
         List<Vec2Int> temp = new List<Vec2Int>();
 
         for (int cy = 0; cy < _cdims.y; cy++)
         {
+            for (int cx = 1; cx < _cdims.x; cx++)
+            {
+                Vec2Int pos = new Vec2Int(cx * CHUNK_SIZE - 1, cy * CHUNK_SIZE);
+                long border =
+                    GetBorderLine(pos, Vec2Int.up) | GetBorderLine(pos + Vec2Int.right, Vec2Int.up);
+
+                HandleBorder(border, pos, Vec2Int.up, temp);
+
+                List<Vertex> leftVerts = GetGates(new Vec2Int(cx - 1, cy));
+                List<Vertex> rightVerts = GetGates(new Vec2Int(cx, cy));
+
+                for (int i = 0; i < temp.Count; i++)
+                {
+                    if (
+                        !leftVerts.TryGet(
+                            temp[i],
+                            (vert, pos) => vert.pos == pos,
+                            out Vertex leftVert
+                        )
+                    )
+                    {
+                        leftVert = new Vertex(temp[i], new List<Edge>());
+                        leftVerts.Add(leftVert);
+                    }
+
+                    if (
+                        !rightVerts.TryGet(
+                            temp[i] + Vec2Int.right,
+                            (vert, pos) => vert.pos == pos,
+                            out Vertex rightVert
+                        )
+                    )
+                    {
+                        rightVert = new Vertex(temp[i] + Vec2Int.right, new List<Edge>());
+                        rightVerts.Add(rightVert);
+                    }
+
+                    leftVert.edges.Add(new Edge(rightVert, new Path(null, 10)));
+                    rightVert.edges.Add(new Edge(leftVert, new Path(null, 10)));
+                }
+            }
+        }
+
+        for (int cy = 1; cy < _cdims.y; cy++)
+        {
             for (int cx = 0; cx < _cdims.x; cx++)
             {
-                // ugly looks but it's necessary to avoid duplicates
-                // it can happen if cell is in the edge
+                Vec2Int pos = new Vec2Int(cx * CHUNK_SIZE, cy * CHUNK_SIZE - 1);
+                long border =
+                    GetBorderLine(pos, Vec2Int.right)
+                    | GetBorderLine(pos + Vec2Int.up, Vec2Int.right);
 
-                if (cx + 1 < _cdims.x)
+                HandleBorder(border, pos, Vec2Int.right, temp);
+
+                List<Vertex> downVerts = GetGates(new Vec2Int(cx, cy - 1));
+                List<Vertex> upVerts = GetGates(new Vec2Int(cx, cy));
+
+                for (int i = 0; i < temp.Count; i++)
                 {
-                    Vec2Int pos = new Vec2Int((cx + 1) * CHUNK_SIZE - 1, cy * CHUNK_SIZE);
-                    long border =
-                        GetBorderLine(pos, Vec2Int.up)
-                        | GetBorderLine(pos + Vec2Int.right, Vec2Int.up);
+                    if (
+                        !downVerts.TryGet(
+                            temp[i],
+                            (vert, pos) => vert.pos == pos,
+                            out Vertex downVert
+                        )
+                    )
+                    {
+                        downVert = new Vertex(temp[i], new List<Edge>());
+                        downVerts.Add(downVert);
+                    }
 
-                    HandleBorder(border, pos, Vec2Int.up, temp);
-                    List<Vertex> verts = GetGates(new Vec2Int(cx + 1, cy));
-                    for (int i = 0; i < temp.Count; i++)
-                        verts.Add(GetVertex(temp[i]));
-                }
+                    if (
+                        !upVerts.TryGet(
+                            temp[i] + Vec2Int.up,
+                            (vert, pos) => vert.pos == pos,
+                            out Vertex upVert
+                        )
+                    )
+                    {
+                        upVert = new Vertex(temp[i] + Vec2Int.up, new List<Edge>());
+                        upVerts.Add(upVert);
+                    }
 
-                if (cy + 1 < _cdims.y)
-                {
-                    Vec2Int pos = new Vec2Int(cx * CHUNK_SIZE, (cy + 1) * CHUNK_SIZE - 1);
-                    long border =
-                        GetBorderLine(pos, Vec2Int.right)
-                        | GetBorderLine(pos + Vec2Int.up, Vec2Int.right);
-
-                    HandleBorder(border, pos, Vec2Int.right, temp);
-                    List<Vertex> verts = GetGates(new Vec2Int(cx, cy + 1));
-                    for (int i = 0; i < temp.Count; i++)
-                        verts.Add(GetVertex(temp[i]));
+                    downVert.edges.Add(new Edge(upVert, new Path(null, 10)));
+                    upVert.edges.Add(new Edge(downVert, new Path(null, 10)));
                 }
             }
         }
@@ -331,8 +375,8 @@ class PathfindHPA : Pathfinder
 
     private Path GetPathLocal(Vec2Int start, Vec2Int end, Vec2Int offset)
     {
-        start = (start - offset).BoundMin(Vec2Int.zero);
-        end = (end - offset).BoundMin(Vec2Int.zero);
+        start -= offset;
+        end -= offset;
 
         Path path = _pathfinder.GetPath(start, end);
         for (int i = 0; i < path.Count; i++)

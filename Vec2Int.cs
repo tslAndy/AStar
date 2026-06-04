@@ -6,8 +6,6 @@ record struct Vec2Int(int x, int y)
     public Vec2Int Clamp(int min, int max) =>
         new Vec2Int(Math.Clamp(this.x, min, max), Math.Clamp(this.y, min, max));
 
-    public Vec2Int BoundMin(Vec2Int min) => new Vec2Int(Math.Max(x, min.x), Math.Max(y, min.y));
-
     public Vec2Int Abs() => new Vec2Int(Math.Abs(x), Math.Abs(y));
 
     public Vec2Int OnlyX => new Vec2Int(x, 0);
