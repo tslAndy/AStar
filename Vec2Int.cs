@@ -6,6 +6,8 @@ record struct Vec2Int(int x, int y)
     public Vec2Int Clamp(int min, int max) =>
         new Vec2Int(Math.Clamp(this.x, min, max), Math.Clamp(this.y, min, max));
 
+    public Vec2Int BoundMin(Vec2Int min) => new Vec2Int(Math.Max(x, min.x), Math.Max(y, min.y));
+
     public Vec2Int OnlyX => new Vec2Int(x, 0);
     public Vec2Int OnlyY => new Vec2Int(0, y);
 
@@ -19,10 +21,7 @@ record struct Vec2Int(int x, int y)
     public static Vec2Int downLeft => new Vec2Int(-1, -1);
     public static Vec2Int downRight => new Vec2Int(1, -1);
 
-    // TODO: remove
-    public int mag => (int)MathF.Sqrt(x * x + y * y);
-
-    public override string ToString() => $"Vec2Int: ({x} {y})";
+    public override string ToString() => $"({x} {y})";
 
     public static int Dot(Vec2Int left, Vec2Int right) => left.x * right.x + left.y * right.y;
 

@@ -6,26 +6,17 @@ class Program
 {
     public static void Main()
     {
-        // Решение проблемы с графом
-        // при нахождении границы создается только один вертекс, он общий для обоих чанков и добавляется к обоим
-        // в этот вертекс записывается только одна из двух позиций
-        // когда ищем пути внутри чанка между мостами
-        // либо при поиске путей от стартовой точки до мостов
-        // то ограничиваем точку вертекса размерами чанка, чтобы не выходить за границы
-        // таким образом не надо проверять элемент на склейке
-        // например можно записывать нижнюю координату
-        //
-        // плюс при добавлении переходов второго направления надо проверять
-        // есть ли в чанке уще существующий вертекс с такой координатой
-        // например сначала добавляем вертикальные переходы. записываем минимальную координату, т.е. нижнюю
-        // затем при добавлении горизонтального перехода берем минимальную координату, т.е. левую
-        // проверяем только в одном чанке (минимальном), есть ли вертекс с такой координатой
+        // WARNING: при изменении в чанке знаем какие ребра у него есть
+        // удаляем все его ребра и пути
+        // а так же удаляем соответсвтующие ребра из соединенных чанков
+        // затем обновляем границы с 4х сторон
 
-        int width = 180;
-        int height = 100;
+        int width = 184;
+        int height = 96;
         int cSize = 10;
 
-        Pathfinder pathfind = new PathfindJpsCached(width, height);
+        // PathfindHPA pathfind = new PathfindHPA(width, height);
+        Pathfinder pathfind = new PathfindHPA(width, height);
 
         Vec2Int? start = null,
             end = null;
@@ -73,6 +64,11 @@ class Program
                     path = default;
                 }
             }
+            //
+            if (Raylib.IsKeyPressed(KeyboardKey.Space))
+            {
+                pathfind.Update();
+            }
 
             Raylib.BeginDrawing();
             Raylib.ClearBackground(Color.Black);
@@ -118,12 +114,15 @@ class Program
             }
             for (int i = 0; i < path.Count; i++)
             {
-                Raylib.DrawCircle(
-                    path[i].x * cSize + cSize / 2,
-                    path[i].y * cSize + cSize / 2,
-                    cSize / 4,
-                    Color.Green
-                );
+                Vec2Int tpos = path[i] * cSize + new Vec2Int(cSize) / 2;
+                Raylib.DrawText(i.ToString(), tpos.x, tpos.y, 18, Color.White);
+
+                // Raylib.DrawCircle(
+                //     path[i].x * cSize + cSize / 2,
+                //     path[i].y * cSize + cSize / 2,
+                //     cSize / 4,
+                //     Color.Green
+                // );
             }
 
             for (int y = 0; y < height; y++)
@@ -131,10 +130,10 @@ class Program
             for (int x = 0; x < width; x++)
                 Raylib.DrawLine(x * cSize, 0, x * cSize, height * cSize, Color.Gray);
 
-            // for (int y = 0; y < height; y += PathfindHPA.CHUNK_SIZE)
-            //     Raylib.DrawLine(0, y * cSize, width * cSize, y * cSize, Color.Green);
-            // for (int x = 0; x < width; x += PathfindHPA.CHUNK_SIZE)
-            //     Raylib.DrawLine(x * cSize, 0, x * cSize, height * cSize, Color.Green);
+            for (int y = 0; y < height; y += PathfindHPA.CHUNK_SIZE)
+                Raylib.DrawLine(0, y * cSize, width * cSize, y * cSize, Color.Green);
+            for (int x = 0; x < width; x += PathfindHPA.CHUNK_SIZE)
+                Raylib.DrawLine(x * cSize, 0, x * cSize, height * cSize, Color.Green);
 
             // for (int x = 0; x < width; x++)
             //     Raylib.DrawText(x.ToString(), x * cSize + 5, 0, 20, Color.White);

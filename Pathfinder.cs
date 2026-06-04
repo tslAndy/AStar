@@ -15,6 +15,8 @@ abstract class Pathfinder
 
     public abstract Path GetPath(Vec2Int start, Vec2Int end);
 
+    public virtual void Update() { }
+
     protected Path BuildPath(Dictionary<Vec2Int, Node> field, Vec2Int start, Vec2Int end)
     {
         List<Vec2Int> path = new List<Vec2Int>();
@@ -24,6 +26,7 @@ abstract class Pathfinder
             end = field[end].prev;
         }
         path.Add(start);
+        path.Reverse();
 
         int length = 0;
         for (int i = 0; i < path.Count - 1; i++)
@@ -78,5 +81,6 @@ struct Path
 
     public int Count => _points?.Length ?? 0;
 
-    public Vec2Int this[int index] => _points[reversed ? (_points.Length - 1 - index) : index];
+    public ref Vec2Int this[int index] =>
+        ref _points[reversed ? (_points.Length - 1 - index) : index];
 }

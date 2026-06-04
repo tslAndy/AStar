@@ -13,7 +13,7 @@ class PathfindJpsCached : Pathfinder
         _closed = new HashSet<Vec2Int>();
         _heap = new Heap<Vec2Int>();
 
-        Bake();
+        Update();
     }
 
     public override Path GetPath(Vec2Int start, Vec2Int end)
@@ -203,11 +203,10 @@ class PathfindJpsCached : Pathfinder
             && Vec2Int.Dot(end - pos, dir) >= 0;
     }
 
-    private void Bake()
+    public override void Update()
     {
         Array.Fill(_cells, default);
 
-        // WARNING: требуется идти от обратной точки направления
         for (int y = 0; y < height; y++)
         {
             FillAxis(new Vec2Int(width - 1, y), Vec2Int.right);
@@ -431,15 +430,5 @@ class PathfindJpsCached : Pathfinder
     {
         get => _cells[pos.y * width + pos.x][dir];
         set => _cells[pos.y * width + pos.x][dir] = value;
-    }
-
-    public override bool this[Vec2Int pos]
-    {
-        get => base[pos];
-        set
-        {
-            base[pos] = value;
-            Bake();
-        }
     }
 }
