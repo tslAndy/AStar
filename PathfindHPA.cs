@@ -378,7 +378,7 @@ class PathfindHPA : Pathfinder
         return result;
     } // Of the edge, and where I walk alone
 
-    private record Vertex(Vec2Int pos, List<Edge> edges);
+    private record struct Vertex(Vec2Int pos, List<Edge> edges);
 
     private record struct Edge(Vertex end, Path path);
 
