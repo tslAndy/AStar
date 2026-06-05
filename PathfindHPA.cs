@@ -402,9 +402,9 @@ class PathfindHPA : Pathfinder
             border = ((1L << 63) >> (n - 1)) | (border >> n);
 
             if (n < 3)
-                temp.Add(pos + dir * (offset)); // + (n >> 1)
+                temp.Add(pos + dir * offset); // + (n >> 1)
             else
-                for (int i = 1; i < n; i += 3)
+                for (int i = 1; i < n; i += CHUNK_SIZE >> 2)
                     temp.Add(pos + dir * (offset + i));
 
             offset += n;
