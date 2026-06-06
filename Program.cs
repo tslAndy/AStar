@@ -31,7 +31,7 @@ class Program
                     path = pathfind.GetPath(start.Value, end.Value);
                 }
             }
-            else if (Raylib.IsMouseButtonDown(MouseButton.Right))
+            else if (Raylib.IsMouseButtonDown(MouseButton.Right) && pathfind[posInt])
             {
                 pathfind[posInt] = false;
                 if (start != null && end != null)

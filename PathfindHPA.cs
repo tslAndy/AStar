@@ -5,6 +5,7 @@ class PathfindHPA : Pathfinder
     private readonly Dictionary<Vertex, VNode> _field;
     private readonly HashSet<Vertex> _closed;
     private readonly Heap<Vertex> _heap;
+    private readonly Dictionary<Vec2Int, State> _chunkState;
 
     private readonly Vec2Int _cdims;
     private readonly List<Vertex>[] _gates;
@@ -27,19 +28,59 @@ class PathfindHPA : Pathfinder
         _field = new Dictionary<Vertex, VNode>();
         _closed = new HashSet<Vertex>();
         _heap = new Heap<Vertex>();
+        _chunkState = new Dictionary<Vec2Int, State>();
+
+        // basic setup
+
+        List<Vec2Int> temp = new List<Vec2Int>();
+
+        for (int cy = 0; cy < _cdims.y; cy++)
+        for (int cx = 1; cx < _cdims.x; cx++)
+            UpdateBorder(
+                new Vec2Int(cx * CHUNK_SIZE - 1, cy * CHUNK_SIZE),
+                Vec2Int.up,
+                Vec2Int.right,
+                temp
+            );
+
+        for (int cy = 1; cy < _cdims.y; cy++)
+        for (int cx = 0; cx < _cdims.x; cx++)
+            UpdateBorder(
+                new Vec2Int(cx * CHUNK_SIZE, cy * CHUNK_SIZE - 1),
+                Vec2Int.right,
+                Vec2Int.up,
+                temp
+            );
+
+        for (int cy = 0; cy < _cdims.y; cy++)
+        for (int cx = 0; cx < _cdims.x; cx++)
+            AddInternal(new Vec2Int(cx, cy));
     }
 
-    public override void Update()
+    public override bool this[Vec2Int pos]
     {
-        for (int i = 0; i < _gates.Length; i++)
-            _gates[i].Clear();
+        get => base[pos];
+        set
+        {
+            base[pos] = value;
+            bool isOnBorder =
+                pos.x % CHUNK_SIZE == 0
+                || pos.y % CHUNK_SIZE == 0
+                || (pos.x + 1) % CHUNK_SIZE == 0
+                || (pos.y + 1) % CHUNK_SIZE == 0;
 
-        // thought also about saving vertices to object pool and reuse them again
-        // but too lazy to implement it
-        // so each time new are created
+            State flag = isOnBorder ? State.External : State.Internal;
+            Vec2Int chunkPos = pos / CHUNK_SIZE;
+            if (_chunkState.TryGetValue(chunkPos, out State state))
+                _chunkState[chunkPos] = state | flag;
+            else
+                _chunkState[chunkPos] = flag;
 
-        FindBridges();
-        ConnectBridges();
+            if (isOnBorder)
+                Console.WriteLine($"Border at chunk {chunkPos} {_chunkState[chunkPos]}");
+            else
+                Console.WriteLine($"Internal at chunk {chunkPos} {_chunkState[chunkPos]}");
+        }
     }
 
     public override Path GetPath(Vec2Int start, Vec2Int end)
@@ -232,110 +273,119 @@ class PathfindHPA : Pathfinder
         GetGates(chunkPos).Remove(vertex);
     }
 
-    private void FindBridges()
+    // public override void Update()
+    // {
+    //     foreach (List<Vertex> verts in _gates)
+    //         verts.Clear();
+    //     List<Vec2Int> temp = new List<Vec2Int>();
+    //
+    //     for (int cy = 0; cy < _cdims.y; cy++)
+    //     for (int cx = 1; cx < _cdims.x; cx++)
+    //         UpdateBorder(
+    //             new Vec2Int(cx * CHUNK_SIZE - 1, cy * CHUNK_SIZE),
+    //             Vec2Int.up,
+    //             Vec2Int.right,
+    //             temp
+    //         );
+    //
+    //     for (int cy = 1; cy < _cdims.y; cy++)
+    //     for (int cx = 0; cx < _cdims.x; cx++)
+    //         UpdateBorder(
+    //             new Vec2Int(cx * CHUNK_SIZE, cy * CHUNK_SIZE - 1),
+    //             Vec2Int.right,
+    //             Vec2Int.up,
+    //             temp
+    //         );
+    //
+    //     for (int cy = 0; cy < _cdims.y; cy++)
+    //     for (int cx = 0; cx < _cdims.x; cx++)
+    //         AddInternal(new Vec2Int(cx, cy));
+    // }
+
+    public override void Update()
     {
+        Vec2Int[] chunks = _chunkState.Keys.ToArray();
+
+        foreach (Vec2Int chunkPos in chunks)
+        {
+            State chunkState = _chunkState[chunkPos];
+
+            RemoveInternal(chunkPos);
+            if ((chunkState & State.External) == 0)
+                continue;
+
+            Vec2Int onDir;
+            if (CheckChunkPos(onDir = chunkPos + Vec2Int.up))
+            {
+                RemoveInternal(onDir);
+                if (!_chunkState.ContainsKey(onDir))
+                    _chunkState.Add(onDir, State.Internal);
+            }
+
+            if (CheckChunkPos(onDir = chunkPos + Vec2Int.down))
+            {
+                RemoveInternal(onDir);
+                if (!_chunkState.ContainsKey(onDir))
+                    _chunkState.Add(onDir, State.Internal);
+            }
+
+            if (CheckChunkPos(onDir = chunkPos + Vec2Int.left))
+            {
+                RemoveInternal(onDir);
+                if (!_chunkState.ContainsKey(onDir))
+                    _chunkState.Add(onDir, State.Internal);
+            }
+
+            if (CheckChunkPos(onDir = chunkPos + Vec2Int.right))
+            {
+                RemoveInternal(onDir);
+                if (!_chunkState.ContainsKey(onDir))
+                    _chunkState.Add(onDir, State.Internal);
+            }
+        }
+
+        foreach (Vec2Int chunkPos in chunks)
+        {
+            State chunkState = _chunkState[chunkPos];
+            if ((chunkState & State.External) != 0)
+                RemoveExternal(chunkPos);
+        }
+
         List<Vec2Int> temp = new List<Vec2Int>();
-
-        for (int cy = 0; cy < _cdims.y; cy++)
+        foreach (Vec2Int chunkPos in chunks)
         {
-            for (int cx = 1; cx < _cdims.x; cx++)
-            {
-                Vec2Int pos = new Vec2Int(cx * CHUNK_SIZE - 1, cy * CHUNK_SIZE);
-                long border =
-                    GetBorderLine(pos, Vec2Int.up) | GetBorderLine(pos + Vec2Int.right, Vec2Int.up);
+            State chunkState = _chunkState[chunkPos];
+            if ((chunkState & State.External) == 0)
+                continue;
 
-                HandleBorder(border, pos, Vec2Int.up, temp);
+            _chunkState[chunkPos] = State.Updated;
 
-                List<Vertex> leftVerts = GetGates(new Vec2Int(cx - 1, cy));
-                List<Vertex> rightVerts = GetGates(new Vec2Int(cx, cy));
+            Vec2Int up = chunkPos + Vec2Int.up;
+            if (CheckChunkPos(up) && (_chunkState[up] & State.Updated) == 0)
+                UpdateBorder(up * CHUNK_SIZE + Vec2Int.down, Vec2Int.right, Vec2Int.up, temp);
 
-                for (int i = 0; i < temp.Count; i++)
-                {
-                    if (
-                        !leftVerts.TryGet(
-                            temp[i],
-                            (vert, pos) => vert.pos == pos,
-                            out Vertex leftVert
-                        )
-                    )
-                    {
-                        leftVert = new Vertex(temp[i], new List<Edge>());
-                        leftVerts.Add(leftVert);
-                    }
+            Vec2Int down = chunkPos + Vec2Int.down;
+            if (CheckChunkPos(down) && (_chunkState[down] & State.Updated) == 0)
+                UpdateBorder(chunkPos * CHUNK_SIZE + Vec2Int.down, Vec2Int.right, Vec2Int.up, temp);
 
-                    if (
-                        !rightVerts.TryGet(
-                            temp[i] + Vec2Int.right,
-                            (vert, pos) => vert.pos == pos,
-                            out Vertex rightVert
-                        )
-                    )
-                    {
-                        rightVert = new Vertex(temp[i] + Vec2Int.right, new List<Edge>());
-                        rightVerts.Add(rightVert);
-                    }
+            Vec2Int left = chunkPos + Vec2Int.left;
+            if (CheckChunkPos(left) && (_chunkState[left] & State.Updated) == 0)
+                UpdateBorder(chunkPos * CHUNK_SIZE + Vec2Int.left, Vec2Int.up, Vec2Int.right, temp);
 
-                    leftVert.edges.Add(new Edge(rightVert, new Path(null, 10)));
-                    rightVert.edges.Add(new Edge(leftVert, new Path(null, 10)));
-                }
-            }
+            Vec2Int right = chunkPos + Vec2Int.right;
+            if (CheckChunkPos(right) && (_chunkState[right] & State.Updated) == 0)
+                UpdateBorder(right * CHUNK_SIZE + Vec2Int.left, Vec2Int.up, Vec2Int.right, temp);
         }
 
-        for (int cy = 1; cy < _cdims.y; cy++)
-        {
-            for (int cx = 0; cx < _cdims.x; cx++)
-            {
-                Vec2Int pos = new Vec2Int(cx * CHUNK_SIZE, cy * CHUNK_SIZE - 1);
-                long border =
-                    GetBorderLine(pos, Vec2Int.right)
-                    | GetBorderLine(pos + Vec2Int.up, Vec2Int.right);
-
-                HandleBorder(border, pos, Vec2Int.right, temp);
-
-                List<Vertex> downVerts = GetGates(new Vec2Int(cx, cy - 1));
-                List<Vertex> upVerts = GetGates(new Vec2Int(cx, cy));
-
-                for (int i = 0; i < temp.Count; i++)
-                {
-                    if (
-                        !downVerts.TryGet(
-                            temp[i],
-                            (vert, pos) => vert.pos == pos,
-                            out Vertex downVert
-                        )
-                    )
-                    {
-                        downVert = new Vertex(temp[i], new List<Edge>());
-                        downVerts.Add(downVert);
-                    }
-
-                    if (
-                        !upVerts.TryGet(
-                            temp[i] + Vec2Int.up,
-                            (vert, pos) => vert.pos == pos,
-                            out Vertex upVert
-                        )
-                    )
-                    {
-                        upVert = new Vertex(temp[i] + Vec2Int.up, new List<Edge>());
-                        upVerts.Add(upVert);
-                    }
-
-                    downVert.edges.Add(new Edge(upVert, new Path(null, 10)));
-                    upVert.edges.Add(new Edge(downVert, new Path(null, 10)));
-                }
-            }
-        }
+        foreach (Vec2Int chunkPos in _chunkState.Keys)
+            AddInternal(chunkPos);
+        _chunkState.Clear();
     }
 
-    private void ConnectBridges()
-    {
-        for (int cy = 0; cy < _cdims.y; cy++)
-        for (int cx = 0; cx < _cdims.x; cx++)
-            ConnectChunk(new Vec2Int(cx, cy));
-    }
+    private bool CheckChunkPos(Vec2Int chunkPos) =>
+        0 <= chunkPos.x && chunkPos.x < _cdims.x && 0 <= chunkPos.y && chunkPos.y < _cdims.y;
 
-    private void ConnectChunk(Vec2Int chunkPos)
+    private void AddInternal(Vec2Int chunkPos)
     {
         Vec2Int offset = chunkPos * CHUNK_SIZE;
         FillPathfinder(offset);
@@ -357,6 +407,58 @@ class PathfindHPA : Pathfinder
                 vert_b.edges.Add(new Edge(vert_a, path with { reversed = true }));
             }
         }
+    }
+
+    private void RemoveInternal(Vec2Int chunkPos)
+    {
+        List<Vertex> verts = GetGates(chunkPos);
+        for (int i = 0; i < verts.Count; i++)
+        {
+            Vertex vert = verts[i];
+
+            int k = 0;
+            while (k < vert.edges.Count)
+            {
+                if (vert.edges[k].end.pos / CHUNK_SIZE == chunkPos)
+                    vert.edges.RemoveAt(k);
+                else
+                    k++;
+            }
+        }
+
+        // TODO: remove
+        for (int i = 0; i < verts.Count; i++)
+        {
+            Vertex vert = verts[i];
+            for (int k = 0; k < vert.edges.Count; k++)
+                if (vert.edges[k].end.pos / CHUNK_SIZE == chunkPos)
+                    throw new Exception("Internal clean failed");
+        }
+    }
+
+    //  перед вызовом этой функции все внутренние пути уже очищены
+    //  т.е. остаются только внешние соединения
+    private void RemoveExternal(Vec2Int chunkPos)
+    {
+        List<Vertex> vertices = GetGates(chunkPos);
+        for (int i = 0; i < vertices.Count; i++)
+        {
+            Vertex vertex = vertices[i];
+            for (int k = 0; k < vertex.edges.Count; k++)
+            {
+                // TODO: remove
+                if (vertex.edges[k].end.pos / CHUNK_SIZE == chunkPos)
+                    throw new Exception("Internal wasnt cleaned");
+
+                Vertex endVertex = vertex.edges[k].end;
+                endVertex.edges.Delete(vertex.pos, (edge, endPos) => edge.end.pos == endPos);
+                if (endVertex.edges.Count == 0)
+                    GetGates(endVertex.pos / CHUNK_SIZE)
+                        .Delete(endVertex.pos, (vert, pos) => vert.pos == pos);
+            }
+        }
+
+        vertices.Clear();
     }
 
     private List<Vertex> GetGates(Vec2Int chunkPos) => _gates[chunkPos.y * _cdims.x + chunkPos.x];
@@ -384,7 +486,40 @@ class PathfindHPA : Pathfinder
         return path;
     }
 
-    private void HandleBorder(long border, Vec2Int pos, Vec2Int dir, List<Vec2Int> temp)
+    private void UpdateBorder(Vec2Int pos, Vec2Int scanDir, Vec2Int offsetDir, List<Vec2Int> temp)
+    {
+        long border = GetBorderLine(pos, scanDir) | GetBorderLine(pos + offsetDir, scanDir);
+        GetBorderPoints(border, pos, scanDir, temp);
+
+        List<Vertex> leftChunk = GetGates(pos / CHUNK_SIZE);
+        List<Vertex> rightChunk = GetGates(pos / CHUNK_SIZE + offsetDir);
+
+        for (int i = 0; i < temp.Count; i++)
+        {
+            if (!leftChunk.TryGet(temp[i], (vert, pos) => vert.pos == pos, out Vertex leftVert))
+            {
+                leftVert = new Vertex(temp[i], new List<Edge>());
+                leftChunk.Add(leftVert);
+            }
+
+            if (
+                !rightChunk.TryGet(
+                    temp[i] + offsetDir,
+                    (vert, pos) => vert.pos == pos,
+                    out Vertex rightVert
+                )
+            )
+            {
+                rightVert = new Vertex(temp[i] + offsetDir, new List<Edge>());
+                rightChunk.Add(rightVert);
+            }
+
+            leftVert.edges.Add(new Edge(rightVert, new Path(null, 10)));
+            rightVert.edges.Add(new Edge(leftVert, new Path(null, 10)));
+        }
+    }
+
+    private void GetBorderPoints(long border, Vec2Int pos, Vec2Int dir, List<Vec2Int> temp)
     {
         temp.Clear();
 
@@ -432,6 +567,14 @@ class PathfindHPA : Pathfinder
     private record struct VNode(int gcost, int hCost, Vertex prev, Path path)
     {
         public int fCost => gcost + hCost;
+    }
+
+    private enum State
+    {
+        Idle = 0,
+        Internal = 1,
+        External = 2,
+        Updated = 8,
     }
 }
 
