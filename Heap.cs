@@ -122,25 +122,17 @@ class Heap<T>
 
     private int GetIndex(T elem)
     {
-        // TODO: remove
-        EqualityComparer<T> eq = EqualityComparer<T>.Default;
-        for (int i = 0; i < _list.Count; i++)
+        int n = (_list.Count >> 1) + (_list.Count & 1);
+        int end = _list.Count - 1;
+
+        for (int i = 0; i < n; i++, end--)
         {
-            if (eq.Equals(elem, _list[i].elem))
+            if (elem.Equals(_list[i].elem))
                 return i;
+            if (elem.Equals(_list[end].elem))
+                return end;
         }
         return -1;
-        // int n = (_list.Count >> 1) + (_list.Count & 1);
-        // int end = _list.Count - 1;
-        //
-        // for (int i = 0; i < n; i++, end--)
-        // {
-        //     if (elem.Equals(_list[i].elem))
-        //         return i;
-        //     if (elem.Equals(_list[end].elem))
-        //         return end;
-        // }
-        // return -1;
     }
 
     private record struct Node(T elem, int prior);
