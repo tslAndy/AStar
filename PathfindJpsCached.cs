@@ -3,7 +3,7 @@ class PathfindJpsCached : Pathfinder
     private readonly Cell[] _cells;
     private readonly Dictionary<Vec2Int, Node> _field;
     private readonly HashSet<Vec2Int> _closed;
-    private readonly Heap<Vec2Int> _heap;
+    private readonly Heap<(int, int), Vec2Int> _heap;
 
     public PathfindJpsCached(int width, int height)
         : base(width, height)
@@ -11,7 +11,7 @@ class PathfindJpsCached : Pathfinder
         _cells = new Cell[width * height];
         _field = new Dictionary<Vec2Int, Node>();
         _closed = new HashSet<Vec2Int>();
-        _heap = new Heap<Vec2Int>();
+        _heap = new Heap<(int, int), Vec2Int>(new ComparerAB());
 
         Update();
     }
@@ -24,7 +24,7 @@ class PathfindJpsCached : Pathfinder
 
         Node first = new Node(0, GetCost(start, end), start);
         _field.Add(start, first);
-        _heap.Add(start, first.fCost);
+        _heap.Add(start, (first.fCost, first.hCost));
 
         while (_heap.Count != 0)
         {
@@ -51,14 +51,14 @@ class PathfindJpsCached : Pathfinder
                 {
                     if (jumpNode.fCost < existing.fCost)
                     {
-                        _heap.Change(jump, jumpNode.fCost);
+                        _heap.Change(jump, (jumpNode.fCost, jumpNode.hCost));
                         _field[jump] = jumpNode;
                     }
                 }
                 else
                 {
                     _field.Add(jump, jumpNode);
-                    _heap.Add(jump, jumpNode.fCost);
+                    _heap.Add(jump, (jumpNode.fCost, jumpNode.hCost));
                 }
             }
         }

@@ -4,14 +4,14 @@ class PathfindHPA : Pathfinder
 {
     private readonly Dictionary<Vertex, VNode> _field;
     private readonly HashSet<Vertex> _closed;
-    private readonly Heap<Vertex> _heap;
+    private readonly Heap<(int, int), Vertex> _heap;
     private readonly Dictionary<Vec2Int, State> _chunkState;
 
     private readonly Vec2Int _cdims;
     private readonly List<Vertex>[] _gates;
     private readonly Pathfinder _pathfinder;
 
-    public const int CHUNK_SIZE = 8;
+    public const int CHUNK_SIZE = 16;
 
     public PathfindHPA(int width, int height)
         : base(width, height)
@@ -27,7 +27,7 @@ class PathfindHPA : Pathfinder
 
         _field = new Dictionary<Vertex, VNode>();
         _closed = new HashSet<Vertex>();
-        _heap = new Heap<Vertex>();
+        _heap = new Heap<(int, int), Vertex>(new ComparerAB());
         _chunkState = new Dictionary<Vec2Int, State>();
 
         // basic setup
@@ -114,7 +114,7 @@ class PathfindHPA : Pathfinder
 
         VNode first = new VNode(0, GetCost(start.pos, end.pos), default, default);
         _field.Add(start, first);
-        _heap.Add(start, first.fCost);
+        _heap.Add(start, (first.fCost, first.hCost));
 
         while (_heap.Count != 0)
         {
@@ -143,13 +143,13 @@ class PathfindHPA : Pathfinder
                     if (temp.fCost < existing.fCost)
                     {
                         _field[edge.end] = temp;
-                        _heap.Change(edge.end, temp.fCost);
+                        _heap.Change(edge.end, (temp.fCost, temp.hCost));
                     }
                 }
                 else
                 {
                     _field.Add(edge.end, temp);
-                    _heap.Add(edge.end, temp.fCost);
+                    _heap.Add(edge.end, (temp.fCost, temp.hCost));
                 }
             }
         }
