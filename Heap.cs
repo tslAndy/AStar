@@ -37,6 +37,17 @@ class Heap<TKey, TVal>
 
     public TVal Peek() => _list[0].elem;
 
+    public bool TryPeek(out TVal val)
+    {
+        if (_list.Count != 0)
+        {
+            val = Peek();
+            return true;
+        }
+        val = default;
+        return false;
+    }
+
     public TVal Pop()
     {
         TVal result = _list[0].elem;
@@ -44,6 +55,17 @@ class Heap<TKey, TVal>
         _list.RemoveAt(_list.Count - 1);
         SweepDown(0);
         return result;
+    }
+
+    public bool TryPop(out TVal val)
+    {
+        if (_list.Count != 0)
+        {
+            val = Pop();
+            return true;
+        }
+        val = default;
+        return false;
     }
 
     public void Change(TVal elem, TKey newPrior)

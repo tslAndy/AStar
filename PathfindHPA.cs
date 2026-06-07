@@ -116,9 +116,8 @@ class PathfindHPA : Pathfinder
         _field.Add(start, first);
         _heap.Add(start, (first.fCost, first.hCost));
 
-        while (_heap.Count != 0)
+        while (_heap.TryPop(out Vertex vert))
         {
-            Vertex vert = _heap.Pop();
             VNode node = _field[vert];
 
             _closed.Add(vert);

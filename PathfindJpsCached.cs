@@ -26,9 +26,8 @@ class PathfindJpsCached : Pathfinder
         _field.Add(start, first);
         _heap.Add(start, (first.fCost, first.hCost));
 
-        while (_heap.Count != 0)
+        while (_heap.TryPop(out Vec2Int pos))
         {
-            Vec2Int pos = _heap.Pop();
             Node node = _field[pos];
 
             _closed.Add(pos);
