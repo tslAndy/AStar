@@ -24,12 +24,11 @@ class PathfindSimple : Pathfinder
 
         while (_heap.TryPop(out Vec2Int pos))
         {
-            Node node = _field[pos];
-
             _closed.Add(pos);
-
             if (pos == end)
                 break;
+
+            Node node = _field[pos];
 
             for (int dy = -1; dy < 2; dy++)
             {

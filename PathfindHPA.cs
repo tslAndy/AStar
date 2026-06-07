@@ -118,12 +118,11 @@ class PathfindHPA : Pathfinder
 
         while (_heap.TryPop(out Vertex vert))
         {
-            VNode node = _field[vert];
-
             _closed.Add(vert);
-
             if (vert == end)
                 break;
+
+            VNode node = _field[vert];
 
             for (int i = 0; i < vert.edges.Count; i++)
             {

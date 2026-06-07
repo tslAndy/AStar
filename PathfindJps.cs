@@ -24,12 +24,11 @@ class PathfindJps : Pathfinder
 
         while (_heap.TryPop(out Vec2Int pos))
         {
-            Node node = _field[pos];
-
             _closed.Add(pos);
-
             if (pos == end)
                 break;
+
+            Node node = _field[pos];
 
             Vec2Int dir = (pos - node.prev).Clamp(-1, 1);
             (Pruned pruned, int count) = GetPruned(pos, dir);
