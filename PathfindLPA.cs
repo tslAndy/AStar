@@ -98,14 +98,14 @@ class PathfindLPA : Pathfinder
         if ((!IsCorrect(pos)) || this[pos])
             return;
 
-        _heap.TryRemove(pos);
-
         if (!_field.TryGetValue(pos, out LNode node))
             _field[pos] = node = new LNode(BIG_NUM);
 
         int rhs = GetRHS(pos);
-        if (node.g != rhs)
-            _heap.Add(pos, GetKey(pos));
+        if (node.g == rhs)
+            _heap.TryRemove(pos);
+        else
+            _heap.AddOrChange(pos, GetKey(pos));
     }
 
     private int GetRHS(Vec2Int pos)
