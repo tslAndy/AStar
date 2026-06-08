@@ -5,8 +5,8 @@ class Program
 {
     public static void Main()
     {
-        int width = 30;
-        int height = 20;
+        int width = 60;
+        int height = 40;
         int cSize = 20;
 
         Pathfinder pathfind = new PathfindLPA(width, height);
@@ -61,6 +61,10 @@ class Program
             if (Raylib.IsKeyPressed(KeyboardKey.Space))
             {
                 pathfind.Update();
+                if (start != null && end != null)
+                {
+                    path = pathfind.GetPath(start.Value, end.Value);
+                }
             }
 
             Raylib.BeginDrawing();

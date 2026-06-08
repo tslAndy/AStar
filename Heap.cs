@@ -23,6 +23,15 @@ class Heap<TKey, TVal>
 
     public TKey GetPriority(TVal elem) => _list[GetIndex(elem)].prior;
 
+    public void AddOrChange(TVal elem, TKey key)
+    {
+        int index = GetIndex(elem);
+        if (index < 0)
+            Add(elem, key);
+        else
+            ChangeAt(index, key);
+    }
+
     public TVal PopAdd(TVal elem, TKey key)
     {
         TVal result = _list[0].elem;
@@ -238,7 +247,6 @@ class Heap<TKey, TVal>
         int index = GetIndex(elem);
         if (index < 0)
             return false;
-        Console.WriteLine($"{index} {_list.Count}");
         RemoveAt(index);
         return true;
     }
