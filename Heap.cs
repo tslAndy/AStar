@@ -7,6 +7,8 @@ class Heap<TKey, TVal>
     private const int DIMS = 4;
     private const int DIMS_POW = 2;
 
+    private record struct Node(TVal elem, TKey prior);
+
     public Heap(IComparer<TKey> comparer, int capacity = 16)
     {
         _list = new List<Node>(capacity);
@@ -21,40 +23,18 @@ class Heap<TKey, TVal>
 
     public TKey GetPriority(TVal elem) => _list[GetIndex(elem)].prior;
 
-    public TVal PopAdd(TVal elem, TKey prior)
+    public TVal PopAdd(TVal elem, TKey key)
     {
         TVal result = _list[0].elem;
-        _list[0] = new Node(elem, prior);
+        _list[0] = new Node(elem, key);
         SweepDown(0);
         return result;
     }
 
-    public bool TryAdd(TVal elem, TKey prior)
+    public void Add(TVal elem, TKey key)
     {
-        int index = GetIndex(elem);
-        if (index != -1)
-            return false;
-
-        Add(elem, prior);
-        return true;
-    }
-
-    public void Add(TVal elem, TKey prior)
-    {
-        _list.Add(new Node(elem, prior));
+        _list.Add(new Node(elem, key));
         SweepUp(_list.Count - 1);
-    }
-
-    public bool TryPop(out TVal val)
-    {
-        if (_list.Count != 0)
-        {
-            val = Pop();
-            return true;
-        }
-
-        val = default;
-        return false;
     }
 
     public TVal Pop()
@@ -66,19 +46,6 @@ class Heap<TKey, TVal>
         return val;
     }
 
-    public bool TryPopWithKey(out TVal val, out TKey key)
-    {
-        if (_list.Count != 0)
-        {
-            (val, key) = PopWithKey();
-            return true;
-        }
-
-        val = default;
-        key = default;
-        return false;
-    }
-
     public (TVal, TKey) PopWithKey()
     {
         (TVal val, TKey key) = _list[0];
@@ -88,41 +55,22 @@ class Heap<TKey, TVal>
         return (val, key);
     }
 
-    public bool TryPeek(out TVal val)
-    {
-        if (_list.Count != 0)
-        {
-            val = Peek();
-            return true;
-        }
-        val = default;
-        return false;
-    }
-
-    public bool TryPeekWithKey(out TVal val, out TKey key)
-    {
-        if (_list.Count != 0)
-        {
-            (val, key) = PeekWithKey();
-            return true;
-        }
-        val = default;
-        key = default;
-        return false;
-    }
-
     public TVal Peek() => _list[0].elem;
 
     public (TVal, TKey) PeekWithKey() => (_list[0].elem, _list[0].prior);
 
-    public void Change(TVal elem, TKey newPrior)
+    public void Change(TVal elem, TKey key)
     {
         int index = GetIndex(elem);
-        if (index == -1)
+        if (index < 0)
             throw new ArgumentException($"Elem {elem} doesn't exist", nameof(elem));
+        ChangeAt(index, key);
+    }
 
+    private void ChangeAt(int index, TKey newKey)
+    {
         Node cur = _list[index];
-        Node next = cur with { prior = newPrior };
+        Node next = cur with { prior = newKey };
 
         _list[index] = next;
 
@@ -136,18 +84,9 @@ class Heap<TKey, TVal>
     public void Remove(TVal elem)
     {
         int index = GetIndex(elem);
-        if (index == -1)
+        if (index < 0)
             throw new ArgumentException($"Elem {elem} doesn't exist", nameof(elem));
         RemoveAt(index);
-    }
-
-    public bool TryRemove(TVal elem)
-    {
-        int index = GetIndex(elem);
-        if (index == -1)
-            return false;
-        RemoveAt(index);
-        return true;
     }
 
     private void RemoveAt(int index)
@@ -155,8 +94,8 @@ class Heap<TKey, TVal>
         Node cur = _list[index];
         Node next = _list[^1];
 
-        _list.RemoveAt(_list.Count - 1);
         _list[index] = next;
+        _list.RemoveAt(_list.Count - 1);
 
         int sign = _comparer.Compare(next.prior, cur.prior);
         if (sign < 0)
@@ -226,5 +165,81 @@ class Heap<TKey, TVal>
         return -1;
     }
 
-    private record struct Node(TVal elem, TKey prior);
+    public bool TryAdd(TVal elem, TKey key)
+    {
+        int index = GetIndex(elem);
+        if (index >= 0)
+            return false;
+
+        Add(elem, key);
+        return true;
+    }
+
+    public bool TryPop(out TVal elem)
+    {
+        if (_list.Count != 0)
+        {
+            elem = Pop();
+            return true;
+        }
+
+        elem = default;
+        return false;
+    }
+
+    public bool TryPopWithKey(out TVal elem, out TKey key)
+    {
+        if (_list.Count != 0)
+        {
+            (elem, key) = PopWithKey();
+            return true;
+        }
+
+        elem = default;
+        key = default;
+        return false;
+    }
+
+    public bool TryPeek(out TVal elem)
+    {
+        if (_list.Count != 0)
+        {
+            elem = Peek();
+            return true;
+        }
+        elem = default;
+        return false;
+    }
+
+    public bool TryPeekWithKey(out TVal elem, out TKey key)
+    {
+        if (_list.Count != 0)
+        {
+            (elem, key) = PeekWithKey();
+            return true;
+        }
+        elem = default;
+        key = default;
+        return false;
+    }
+
+    public bool TryChange(TVal elem, TKey key)
+    {
+        int index = GetIndex(elem);
+        if (index < 0)
+            return false;
+
+        ChangeAt(index, key);
+        return false;
+    }
+
+    public bool TryRemove(TVal elem)
+    {
+        int index = GetIndex(elem);
+        if (index < 0)
+            return false;
+        Console.WriteLine($"{index} {_list.Count}");
+        RemoveAt(index);
+        return true;
+    }
 }
