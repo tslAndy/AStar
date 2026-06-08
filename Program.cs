@@ -3,18 +3,13 @@ using Raylib_cs;
 
 class Program
 {
-    // TODO: внести в Heap компоратор.
-    // Для A* сделать так, что если два F значения равны,
-    // то выбирается то, которое ближе к цели.
-    // тогда в качестве ключа выступают два значения, f и h
-
     public static void Main()
     {
-        int width = 128;
-        int height = 96;
-        int cSize = 10;
+        int width = 30;
+        int height = 20;
+        int cSize = 20;
 
-        Pathfinder pathfind = new PathfindHPA(width, height);
+        Pathfinder pathfind = new PathfindLPA(width, height);
 
         Vec2Int? start = null,
             end = null;
@@ -127,10 +122,10 @@ class Program
             for (int x = 0; x < width; x++)
                 Raylib.DrawLine(x * cSize, 0, x * cSize, height * cSize, Color.Gray);
 
-            for (int y = 0; y < height; y += PathfindHPA.CHUNK_SIZE)
-                Raylib.DrawLine(0, y * cSize, width * cSize, y * cSize, Color.Green);
-            for (int x = 0; x < width; x += PathfindHPA.CHUNK_SIZE)
-                Raylib.DrawLine(x * cSize, 0, x * cSize, height * cSize, Color.Green);
+            // for (int y = 0; y < height; y += PathfindHPA.CHUNK_SIZE)
+            //     Raylib.DrawLine(0, y * cSize, width * cSize, y * cSize, Color.Green);
+            // for (int x = 0; x < width; x += PathfindHPA.CHUNK_SIZE)
+            //     Raylib.DrawLine(x * cSize, 0, x * cSize, height * cSize, Color.Green);
 
             Raylib.EndDrawing();
         }
