@@ -17,6 +17,14 @@ abstract class Pathfinder
 
     public virtual void Update() { }
 
+    protected int GetPathLength(List<Vec2Int> points)
+    {
+        int length = 0;
+        for (int i = 0; i < points.Count - 1; i++)
+            length += GetCost(points[i], points[i + 1]);
+        return length;
+    }
+
     protected Path BuildPath(Dictionary<Vec2Int, Node> field, Vec2Int start, Vec2Int end)
     {
         List<Vec2Int> path = new List<Vec2Int>();
@@ -27,12 +35,7 @@ abstract class Pathfinder
         }
         path.Add(start);
         path.Reverse();
-
-        int length = 0;
-        for (int i = 0; i < path.Count - 1; i++)
-            length += GetCost(path[i], path[i + 1]);
-
-        return new Path(path.ToArray(), length);
+        return new Path(path.ToArray(), GetPathLength(path));
     }
 
     protected int GetCost(Vec2Int start, Vec2Int end)

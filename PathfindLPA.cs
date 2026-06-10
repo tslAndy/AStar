@@ -93,7 +93,7 @@ class PathfindLPA : Pathfinder
         }
         points.Add(_start);
         points.Reverse();
-        return new Path(points.ToArray(), 0);
+        return new Path(points.ToArray(), GetPathLength(points));
     }
 
     private void UpdateVertex(Vec2Int pos)

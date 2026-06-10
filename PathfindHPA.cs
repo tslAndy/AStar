@@ -166,12 +166,7 @@ class PathfindHPA : Pathfinder
 
         Smooth(points);
         points.Reverse();
-
-        int length = 0;
-        for (int i = 0; i < points.Count - 1; i++)
-            length += GetCost(points[i], points[i + 1]);
-
-        return new Path(points.ToArray(), length);
+        return new Path(points.ToArray(), GetPathLength(points));
     }
 
     // check if it's possible to remove two points

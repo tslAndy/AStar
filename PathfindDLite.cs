@@ -102,7 +102,6 @@ class PathfindDLite : Pathfinder
             temp = next;
         }
         points.Add(_end);
-        points.Reverse();
         return new Path(points.ToArray(), 0);
     }
 
