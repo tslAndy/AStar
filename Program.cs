@@ -9,7 +9,7 @@ class Program
         int height = 40;
         int cSize = 20;
 
-        Pathfinder pathfind = new PathfindLPA(width, height);
+        Pathfinder pathfind = new PathfindDLite(width, height);
 
         Vec2Int? start = null,
             end = null;
